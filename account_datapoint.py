@@ -1,5 +1,5 @@
 
-class Account:
+class AccountDatapoint:
 
     def __init__(self, pu, account_number, keys, amount, start, end, metrics, account_name):
 
@@ -7,6 +7,7 @@ class Account:
         self.pu = pu
         self.account_name = account_name
         self.account_number = account_number
+        #keys = service (EC2, RDS, ...)
         self.keys = keys  
         self.amount = amount      
         self.start = start

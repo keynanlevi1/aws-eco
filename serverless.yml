@@ -11,10 +11,10 @@
 #
 # Happy Coding!
 
-service: billingoptimizations
+service: aws-eco
 # app and org for use with dashboard.serverless.com
-app: billingoptimizationsapp
-org: keynanlevi
+#app: aws-eco-app
+#org: keynanlevi
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -68,8 +68,8 @@ package:
 #    - exclude-me-dir/**
 
 functions:
-  calcBillingOptimizations:
-    handler: handler.calcBillingOptimizations
+  calc-billing-optimizations:
+    handler: handler.calc_billing_optimizations
     timeout: 900
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -111,7 +111,7 @@ functions:
 #    Define function environment variables here
     environment:
       ELASTIC_CONNECTIONSTRING: "https://elastic:kJ12iC0bfTVXo3qhpJqRLs87@c11f5bc9787c4c268d3b960ad866adc2.eu-central-1.aws.cloud.es.io:9243"
-      LAMBDA_LAST_UPDATE: "2021-02-14"
+      LAMBDA_LAST_UPDATE: "2021-03-20"
       EC2_NUMBER_OF_THREADS: "10"
       EC2_PERFORMANCE_METRIC: "CPUUtilization,NetworkOut,NetworkIn,EBSWriteBytes,EBSReadBytes,DiskReadBytes,DiskWriteBytes,DiskWriteOps,DiskReadOps"
 

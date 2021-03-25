@@ -2,7 +2,7 @@ import pandas
 import traceback 
 from performance_counters import PerformanceCounters
 from thresholds import Thresholds
-from account import Account
+from account_datapoint import AccountDatapoint
 import numpy as np
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers as helpers
@@ -128,7 +128,7 @@ class DbService:
         p = IngestClient(targetES)
 
         if not p.get_pipeline(id = "account-cost-threshold"):        
-            p.put_pipeline(id='account-cost-threshold_2', body={
+            p.put_pipeline(id='account-cost-threshold', body={
                 'description': "add threshold",
                 'processors': [
                 {
@@ -147,12 +147,12 @@ class DbService:
             })
 
         now = datetime.datetime.now()
-        target_index_name = "account-cost-" + now.strftime("%m-%Y")
-        index_template_name = "account-cost-template"
+        target_index_name = "aws-eco-account-cost-" + now.strftime("%m-%Y")
+        index_template_name = "aws-eco-account-cost-template"
 
         #targetES.indices.delete(index=target_index_name, ignore=[400, 404])
         request_body = {
-        "index_patterns": ["account-cost-*"],
+        "index_patterns": ["aws-eco-account-cost-*"],
         "settings" : {
             "number_of_shards": 1,
             "number_of_replicas": 1,
@@ -211,9 +211,9 @@ class DbService:
             print(f"pu = {account.pu}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")
        
     
-    def create_account(self, account_number, response):
+    def get_account_services_cost(self, account_number, response):
 
-        account_list = []
+        account_datapoints_list = []
 
         for row in response['ResultsByTime']:
             start = row['TimePeriod']['Start']
@@ -226,14 +226,14 @@ class DbService:
                 #metrics = 'AmortizedCost'
                 metrics = key_list[0]
 
-                pu = Account.map_pu_to_account(account_number)
-                account_name = Account.map_account_name_to_account_number(account_number)                
+                pu = AccountDatapoint.map_pu_to_account(account_number)
+                account_name = AccountDatapoint.map_account_name_to_account_number(account_number)                
 
-                account = Account(pu = pu, account_name = account_name, account_number = account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
+                account_datapoint = AccountDatapoint(pu = pu, account_name = account_name, account_number = account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
 
-                account_list.append(account)
+                account_datapoints_list.append(account_datapoint)
 
-        return account_list
+        return account_datapoints_list
            
 
     def create_performance_counters_list(self, df_merged, metric_list):

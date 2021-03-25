@@ -107,7 +107,7 @@ def collect_ec2_all(account_number, start_date, end_date):
     except Exception as e:
         print(e)
 
-def add_forcase_to_account_list(account_list):
+def add_forcase_to_account_datapoints(account_list):
 
     aws_service = AwsService() 
 
@@ -138,7 +138,7 @@ def add_forcase_to_account_list(account_list):
 
     return account_list
 
-def collect_accounts_cost(account_number, start_date, end_date):
+def collect_account_services_cost(account_number, start_date, end_date):
 
     aws_service = AwsService() 
     db_service = DbService()
@@ -150,21 +150,22 @@ def collect_accounts_cost(account_number, start_date, end_date):
     metrics = 'AMORTIZED_COST'
     groupby = 'SERVICE'
 
-    # get cost per account on the last month
+    # get daily cost per service (EC2, RDS, ...) on the selected timeframe
     response = aws_service.get_aws_cost_and_usage(account_number, start_date, end_date, granularity, metrics, groupby)
 
-    #create objects to hold the accounts cost data
-    account_list = db_service.create_account(account_number, response)
+    #account_datapoint contains one value. like RDS servive in spesific time (day)
+    #account_datapoints (list) contains all the datapoint between given start and end which are days in this case
+    account_datapoints = db_service.get_account_services_cost(account_number, response)
 
-    account_list_with_forecast = add_forcase_to_account_list(account_list)
+    account_datapoints_with_forecast = add_forcase_to_account_datapoints(account_datapoints)
 
-    db_service.print_account_list(account_list)
+    db_service.print_account_list(account_datapoints_with_forecast)
 
     #insert accounts to elastic
-    db_service.account_bulk_insert_elastic(account_list)    
+    db_service.account_bulk_insert_elastic(account_datapoints_with_forecast)    
 
     
-def calcBillingOptimizations(event, context):
+def calc_billing_optimizations(event, context):
 
     try:    
         client = boto3.client('sts')
@@ -176,7 +177,7 @@ def calcBillingOptimizations(event, context):
         
         if start_date < end_date:                
             print (f"Running lambda from start_date = {start_date} to {end_date}")
-            collect_accounts_cost(account_number, start_date, end_date)
+            collect_account_services_cost(account_number, start_date, end_date)
             collect_ec2_all(account_number, start_date, end_date)    
         else:
             print(f"start date {start_date} and end date {end_date} are equal. exit...")
@@ -184,7 +185,7 @@ def calcBillingOptimizations(event, context):
         client = boto3.client('lambda')
 
         response = client.update_function_configuration(
-        FunctionName='billingoptimizations-prod-calcBillingOptimizations',
+        FunctionName='aws-eco-prod-calc-billing-optimizations',
         Environment={
             'Variables': {
                 'LAMBDA_LAST_UPDATE': end_date,            

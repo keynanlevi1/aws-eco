@@ -252,6 +252,13 @@ def using_boto3():
 
 def main():
 
+    client = boto3.client('sts')
+    response = client.get_caller_identity()
+
+    print(response)
+
+    return
+
     aws_service = AwsService()    
 
     ec2_list = aws_service.get_aws_describe_instances()

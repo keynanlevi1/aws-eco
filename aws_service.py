@@ -4,7 +4,7 @@ from ec2 import EC2
 from thresholds import Thresholds
 import pandas
 import numpy as np
-from account import Account
+from account_datapoint import AccountDatapoint
 from decimal import Decimal
 from datetime import datetime
 
