@@ -17,6 +17,7 @@ from elasticsearch import Elasticsearch
 import elasticsearch.helpers as helpers
 from dateutil.relativedelta import *
 from elasticsearch.client.ingest import IngestClient
+from utility import Utility
 
 import datetime 
 from datetime import date
@@ -251,7 +252,10 @@ def using_boto3():
 
 
 def main():
-
+    
+    print(Utility.map_account_name_to_account_number(379959622371))
+    return 
+    
     client = boto3.client('sts')
     response = client.get_caller_identity()
 

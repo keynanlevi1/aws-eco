@@ -10,6 +10,7 @@ import datetime
 import os
 from decimal import Decimal
 from elasticsearch.client.ingest import IngestClient
+from utility import Utility
 
 
 
@@ -74,7 +75,7 @@ class DbService:
                 'state': {'type': 'keyword'},
                 'ebs_optimized': {'type': 'keyword'},
                 'account_number': {'type': 'keyword'},  
-                'pu': {'type': 'keyword'}, 
+                'department': {'type': 'keyword'}, 
                 'account_name': {'type': 'keyword'},   
                 'cost': {'type': 'float'},            
             }}
@@ -93,7 +94,7 @@ class DbService:
 
         df = pandas.DataFrame(columns=["_id","start_time","cpu_utilization","network_in","network_out", "ebs_write_bytes", "ebs_read_bytes", \
                 "disk_write_ops","disk_read_ops","disk_write_bytes","disk_read_bytes", "is_idle","availability_zone","instance_id","instance_type", \
-                     "launch_time", "state", "ebs_optimized", "account_number", "pu", "account_name", "cost"])      
+                     "launch_time", "state", "ebs_optimized", "account_number", "department", "account_name", "cost"])      
 
         for performance_counters in ec2.performance_counters_list:
                        
@@ -105,7 +106,7 @@ class DbService:
                          "disk_read_bytes":performance_counters.disk_read_bytes, \
                            "is_idle": performance_counters.is_idle, "availability_zone": ec2.availability_zone, "instance_id":ec2.instance_id, \
                                "instance_type":ec2.instance_type, "launch_time":ec2.launch_time, \
-                                   "state": ec2.state, "ebs_optimized":ec2.ebs_optimized,  "account_number": ec2.account_number, "pu": ec2.pu, \
+                                   "state": ec2.state, "ebs_optimized":ec2.ebs_optimized,  "account_number": ec2.account_number, "department": ec2.department, \
                                         "account_name": ec2.account_name, "cost": performance_counters.cost}
             
             df = df.append(new_row, ignore_index=True)
@@ -140,7 +141,7 @@ class DbService:
                 {
                     "script": {
                     "lang": "painless",
-                    "source": "\r\n          if (ctx.containsKey(\"pu\")) { \r\n            String unit = ctx['pu'];\r\n            int value;\r\n            if (unit == \"SAST\") { \r\n              value = 25000; \r\n            } \r\n            else if (unit == \"CxGo\") { \r\n              value = 15000; \r\n            } \r\n            else if (unit == \"AST\") { \r\n              value = 7000; \r\n            } \r\n            else if (unit == \"AST Integration\") { \r\n              value = 1000; \r\n            } \r\n            else if (unit == \"CB\") { \r\n              value = 5000; \r\n            } \r\n            else if (unit == \"SCA\") {\r\n              value = 85000; \r\n            } \r\n            else {\r\n              value = 20000; \r\n            }\r\n            ctx['threshold_value'] = value;\r\n          }\r\n        "
+                    "source": "\r\n          if (ctx.containsKey(\"department\")) { \r\n            String unit = ctx['department'];\r\n            int value;\r\n            if (unit == \"SAST\") { \r\n              value = 25000; \r\n            } \r\n            else if (unit == \"CxGo\") { \r\n              value = 15000; \r\n            } \r\n            else if (unit == \"AST\") { \r\n              value = 7000; \r\n            } \r\n            else if (unit == \"AST Integration\") { \r\n              value = 1000; \r\n            } \r\n            else if (unit == \"CB\") { \r\n              value = 5000; \r\n            } \r\n            else if (unit == \"SCA\") {\r\n              value = 85000; \r\n            } \r\n            else {\r\n              value = 20000; \r\n            }\r\n            ctx['threshold_value'] = value;\r\n          }\r\n        "
                     }
                 }
                 ]
@@ -162,7 +163,7 @@ class DbService:
         },
         'mappings': {            
             'properties': { 
-                'pu': {'type': 'keyword'},   
+                'department': {'type': 'keyword'},   
                 'account_name': {'type': 'keyword'},          
                 'account_number': {'type': 'keyword'},
                 'keys': {'type': 'keyword'},
@@ -184,12 +185,12 @@ class DbService:
         #alias is needed for data retention policy
         #targetES.indices.put_alias(index=target_index_name, name='account-cost', ignore=[400, 404])
 
-        df = pandas.DataFrame(columns=["_id","pu", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
+        df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
 
         for account in account_list:
 
             new_row = {"_id": account.account_number + "-" + account.keys + "-" + datetime.datetime.strptime(account.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
-                "pu": account.pu, "account_name":account.account_name, "account_number":account.account_number,"keys":account.keys,\
+                "department": account.department, "account_name":account.account_name, "account_number":account.account_number,"keys":account.keys,\
                 "amount":account.amount,"start_time":account.start,"end_time":account.end,\
                     "metrics":account.metrics, "forecast_mean_value": account.forecast_mean_value, \
                         "forecast_prediction_interval_lowerbound": account.forecast_prediction_interval_lowerbound, \
@@ -208,7 +209,7 @@ class DbService:
     def print_account_list(self, account_list):
 
         for account in account_list:
-            print(f"pu = {account.pu}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")
+            print(f"department = {account.department}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")
        
     
     def get_account_services_cost(self, account_number, response):
@@ -218,18 +219,15 @@ class DbService:
         for row in response['ResultsByTime']:
             start = row['TimePeriod']['Start']
             end = row['TimePeriod']['End']
-            for group in row['Groups']:
-                #keys = service
-                keys = group['Keys'][0]
+            for group in row['Groups']:               
+                keys = group['Keys'][0]  #keys = service
                 amount = round(Decimal(group['Metrics']['AmortizedCost']['Amount']),4)
-                key_list = list(group['Metrics'].keys())
-                #metrics = 'AmortizedCost'
-                metrics = key_list[0]
+                key_list = list(group['Metrics'].keys())                
+                metrics = key_list[0] #metrics = 'AmortizedCost'
+                department = Utility.map_department_to_account(account_number)
+                account_name = Utility.map_account_name_to_account_number(account_number)                
 
-                pu = AccountDatapoint.map_pu_to_account(account_number)
-                account_name = AccountDatapoint.map_account_name_to_account_number(account_number)                
-
-                account_datapoint = AccountDatapoint(pu = pu, account_name = account_name, account_number = account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
+                account_datapoint = AccountDatapoint(department = department, account_name = account_name, account_number = account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
 
                 account_datapoints_list.append(account_datapoint)
 

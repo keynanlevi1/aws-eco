@@ -7,6 +7,7 @@ import numpy as np
 from account_datapoint import AccountDatapoint
 from decimal import Decimal
 from datetime import datetime
+from utility import Utility
 
 class AwsService: 
 
@@ -94,14 +95,15 @@ class AwsService:
             state = instance.state['Name']            
             try:
                 account_number = instance.network_interfaces_attribute[0]['OwnerId']
-                account_name = Account.map_account_name_to_account_number(account_number)                
-                pu = Account.map_pu_to_account(account_number)
+                account_name = Utility.map_account_name_to_account_number(account_number)                
+                department = Utility.map_department_to_account(account_number)
             except Exception as e:
-                pass
+                print(e)
+                raise
 
             if state == "running":
            
-                ec2 = EC2(availability_zone, instance.id, instance.instance_type, instance.launch_time, state,  instance.ebs_optimized, account_number, pu, account_name)
+                ec2 = EC2(availability_zone, instance.id, instance.instance_type, instance.launch_time, state,  instance.ebs_optimized, account_number, department, account_name)
                 ec2_list.append(ec2)
 
         return ec2_list    

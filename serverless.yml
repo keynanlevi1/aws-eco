@@ -62,6 +62,7 @@ package:
     - thresholds.py
     - performance_counters.py
     - account.py
+    - utility.py
 #    - include-me-dir/**
 #  exclude:
 #    - exclude-me.py

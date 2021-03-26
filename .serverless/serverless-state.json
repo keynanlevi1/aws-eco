@@ -176,7 +176,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/aws-eco/prod/1616701876578-2021-03-25T19:51:16.578Z/aws-eco.zip"
+                "S3Key": "serverless/aws-eco/prod/1616718240205-2021-03-26T00:24:00.205Z/aws-eco.zip"
               },
               "FunctionName": "aws-eco-prod-calc-billing-optimizations",
               "Handler": "handler.calc_billing_optimizations",
@@ -202,14 +202,14 @@
               "CalcDashbillingDashoptimizationsLogGroup"
             ]
           },
-          "CalcDashbillingDashoptimizationsLambdaVersionEGHaGZEKWSA6I8fUoNyDWIzK9agyPPIMpxtPLnp8FQ": {
+          "CalcDashbillingDashoptimizationsLambdaVersioneGcd41zrWexfIpmkDilbCKsH3ZdnukpyAfEKZBHRPc": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CalcDashbillingDashoptimizationsLambdaFunction"
               },
-              "CodeSha256": "GhHOQAhTbAARw8o1ksUP9i2L3LDI5y8YTv6vG6qxWkk="
+              "CodeSha256": "NWZfwpoxcUE3hLVdJrv3Sttcucl2UGLF+fzn3BXt/Qk="
             }
           },
           "CalcDashbillingDashoptimizationsEventsRuleSchedule1": {
@@ -259,7 +259,7 @@
           "CalcDashbillingDashoptimizationsLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CalcDashbillingDashoptimizationsLambdaVersionEGHaGZEKWSA6I8fUoNyDWIzK9agyPPIMpxtPLnp8FQ"
+              "Ref": "CalcDashbillingDashoptimizationsLambdaVersioneGcd41zrWexfIpmkDilbCKsH3ZdnukpyAfEKZBHRPc"
             }
           }
         }
@@ -354,7 +354,7 @@
         "memory": 1024,
         "runtime": "python3.8",
         "vpc": {},
-        "versionLogicalId": "CalcDashbillingDashoptimizationsLambdaVersionEGHaGZEKWSA6I8fUoNyDWIzK9agyPPIMpxtPLnp8FQ"
+        "versionLogicalId": "CalcDashbillingDashoptimizationsLambdaVersioneGcd41zrWexfIpmkDilbCKsH3ZdnukpyAfEKZBHRPc"
       }
     },
     "configValidationMode": "warn",
@@ -374,10 +374,11 @@
           "db_service.py",
           "thresholds.py",
           "performance_counters.py",
-          "account.py"
+          "account.py",
+          "utility.py"
         ],
         "artifact": "/home/keynanl/aws-eco/.serverless/aws-eco.zip",
-        "artifactDirectoryName": "serverless/aws-eco/prod/1616701876578-2021-03-25T19:51:16.578Z"
+        "artifactDirectoryName": "serverless/aws-eco/prod/1616718240205-2021-03-26T00:24:00.205Z"
       },
       "functions": {
         "$ref": "$[\"service\"][\"functions\"]"
@@ -391,7 +392,7 @@
     "artifact": "/home/keynanl/aws-eco/.serverless/aws-eco.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/aws-eco/prod/1616701876578-2021-03-25T19:51:16.578Z",
+    "artifactDirectoryName": "serverless/aws-eco/prod/1616718240205-2021-03-26T00:24:00.205Z",
     "artifact": "aws-eco.zip"
   }
 }

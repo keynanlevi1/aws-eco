@@ -24,7 +24,7 @@ from functools import reduce
 
 def merge_ec2_metrics_on_start_time (frames):
 
-        df_merged = reduce(lambda  left,right: pandas.merge(left,right,on=['start_time'], how='outer'), frames)  
+        df_merged = reduce(lambda  left,right: pandas.merge(left,right,on=['start_time'], how='outer').fillna(0), frames)  
         return df_merged  
 
 
@@ -102,7 +102,7 @@ def collect_ec2_all(account_number, start_date, end_date):
             threads = []    
         
         for ec2 in ec2_list:
-            print(f"instance_id: {ec2.instance_id} ,pu = {ec2.pu}, account_number: {ec2.account_number}, launch_time: {ec2.launch_time}")                
+            print(f"instance_id: {ec2.instance_id} ,department = {ec2.department}, account_number: {ec2.account_number}, launch_time: {ec2.launch_time}")                
                 
     except Exception as e:
         print(e)
