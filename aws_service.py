@@ -4,7 +4,7 @@ from ec2 import EC2
 from thresholds import Thresholds
 import pandas
 import numpy as np
-from account_datapoint import AccountDatapoint
+from datapoint import Datapoint
 from decimal import Decimal
 from datetime import datetime
 from utility import Utility
@@ -30,7 +30,7 @@ class AwsService:
 
         return metric_list
 
-    def get_aws_cost_forecast(self, account_number, start, end, granularity, metrics, groupby):
+    def get_aws_cost_forecast(self, start, end, granularity, metrics, groupby):
         
         response = ""
 
@@ -82,28 +82,20 @@ class AwsService:
 
         return response
        
-    def get_aws_describe_instances(self):
+    def get_aws_describe_instances(self,account):
         
         ec2_list = []
         session = boto3.Session()
         ec2 = session.resource('ec2')
         instances = ec2.instances.filter()
 
-        
         for instance in instances:
             availability_zone = instance.placement["AvailabilityZone"]           
-            state = instance.state['Name']            
-            try:
-                account_number = instance.network_interfaces_attribute[0]['OwnerId']
-                account_name = Utility.map_account_name_to_account_number(account_number)                
-                department = Utility.map_department_to_account(account_number)
-            except Exception as e:
-                print(e)
-                raise
-
+            state = instance.state['Name']                                                             
+            
             if state == "running":
            
-                ec2 = EC2(availability_zone, instance.id, instance.instance_type, instance.launch_time, state,  instance.ebs_optimized, account_number, department, account_name)
+                ec2 = EC2(availability_zone, instance.id, instance.instance_type, instance.launch_time, state,  instance.ebs_optimized, account.account_number, account.department, account.account_name)
                 ec2_list.append(ec2)
 
         return ec2_list    

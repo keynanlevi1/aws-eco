@@ -2,7 +2,7 @@ import pandas
 import traceback 
 from performance_counters import PerformanceCounters
 from thresholds import Thresholds
-from account_datapoint import AccountDatapoint
+from datapoint import Datapoint
 import numpy as np
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers as helpers
@@ -120,7 +120,7 @@ class DbService:
             print(documents)
             raise
 
-    def account_bulk_insert_elastic(self, account_list):
+    def account_bulk_insert_elastic(self, account):
 
         ElasticConnectionString = os.getenv("ELASTIC_CONNECTIONSTRING")
         
@@ -187,16 +187,24 @@ class DbService:
 
         df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
 
-        for account in account_list:
+        for service in account.services:
+            for datapoint in service.datapoints:
+        
 
-            new_row = {"_id": account.account_number + "-" + account.keys + "-" + datetime.datetime.strptime(account.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
-                "department": account.department, "account_name":account.account_name, "account_number":account.account_number,"keys":account.keys,\
-                "amount":account.amount,"start_time":account.start,"end_time":account.end,\
-                    "metrics":account.metrics, "forecast_mean_value": account.forecast_mean_value, \
-                        "forecast_prediction_interval_lowerbound": account.forecast_prediction_interval_lowerbound, \
-                            "forecast_prediction_interval_upperbound": account.forecast_prediction_interval_upperbound}
-            
-            df = df.append(new_row, ignore_index=True)
+                new_row = {"_id": account.account_number + "-" + service.name + "-" + datetime.datetime.strptime(datapoint.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
+                           "department": account.department, \
+                           "account_name":account.account_name, \
+                           "account_number":account.account_number,\
+                           "keys":service.name,\
+                           "amount":datapoint.amount, \
+                           "start_time":datapoint.start, \
+                           "end_time":datapoint.end,\
+                           "metrics":datapoint.metrics, \
+                           "forecast_mean_value": service.forecast.forecast_mean_value, \
+                           "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
+                           "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
+                
+                df = df.append(new_row, ignore_index=True)
         
         documents = df.to_dict(orient='records')
 
@@ -209,29 +217,7 @@ class DbService:
     def print_account_list(self, account_list):
 
         for account in account_list:
-            print(f"department = {account.department}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")
-       
-    
-    def get_account_services_cost(self, account_number, response):
-
-        account_datapoints_list = []
-
-        for row in response['ResultsByTime']:
-            start = row['TimePeriod']['Start']
-            end = row['TimePeriod']['End']
-            for group in row['Groups']:               
-                keys = group['Keys'][0]  #keys = service
-                amount = round(Decimal(group['Metrics']['AmortizedCost']['Amount']),4)
-                key_list = list(group['Metrics'].keys())                
-                metrics = key_list[0] #metrics = 'AmortizedCost'
-                department = Utility.map_department_to_account(account_number)
-                account_name = Utility.map_account_name_to_account_number(account_number)                
-
-                account_datapoint = AccountDatapoint(department = department, account_name = account_name, account_number = account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
-
-                account_datapoints_list.append(account_datapoint)
-
-        return account_datapoints_list
+            print(f"department = {account.department}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")    
            
 
     def create_performance_counters_list(self, df_merged, metric_list):
@@ -251,10 +237,6 @@ class DbService:
             disk_read_bytes = row['DiskReadBytes'] if 'DiskReadBytes' in metric_list and 'DiskReadBytes' in df_merged.columns else 0
             ebs_read_bytes = row['EBSReadBytes'] if 'EBSReadBytes' in metric_list and 'EBSReadBytes' in df_merged.columns else 0
             ebs_write_bytes = row['EBSWriteBytes'] if 'EBSWriteBytes' in metric_list and 'EBSWriteBytes' in df_merged.columns else 0
-
-
-            ebs_read_bytes
-
             is_idle = row['is_cpu_utilization_idle'] if 'CPUUtilization' in metric_list and 'is_cpu_utilization_idle' in df_merged.columns else 1 * \
                 row['is_network_in_idle'] if 'NetworkIn' in metric_list and 'is_network_in_idle' in df_merged.is_network_in_idle else 1 * \
                 row['is_network_out_idle'] if 'NetworkOut' in metric_list and 'is_network_out_idle' in df_merged.columns else 1 

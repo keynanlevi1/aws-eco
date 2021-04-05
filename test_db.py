@@ -252,10 +252,24 @@ def using_boto3():
 
 
 def main():
+
+    ec2_list = []
+    session = boto3.Session()
+    ec2 = session.resource('ec2')
+    instances = ec2.instances.filter()
+
+    for instance in instances:
+        availability_zone = instance.placement["AvailabilityZone"]           
+        state = instance.state['Name']                        
+        account_number = instance.network_interfaces_attribute[0]['OwnerId']
+        account_name = Utility.map_account_name_to_account_number(account_number)                
+        department = Utility.map_department_to_account(account_number)
+
+    return
     
-    print(Utility.map_account_name_to_account_number(379959622371))
+    print(Utility.get_service_namespace('Amazon API Gateway2'))
     return 
-    
+
     client = boto3.client('sts')
     response = client.get_caller_identity()
 

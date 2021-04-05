@@ -90,7 +90,10 @@ class Utility:
 
     @staticmethod
     def get_service_namespace(service):
+        
         dict = {
+            'AmazonCloudWatch':'AWS/Logs',
+            'Tax':'Tax',
             'Amazon API Gateway':'AWS/ApiGateway',
             'AppStream 2.0':'AWS/AppStream',
             'AWS AppSync':'AWS/AppSync',
@@ -101,7 +104,7 @@ class Utility:
             'Amazon CloudFront':'AWS/CloudFront',
             'AWS CloudHSM':'AWS/CloudHSM',
             'Amazon CloudSearch':'AWS/CloudSearch',
-            'Amazon CloudWatch Logs':'AWS/Logs',
+            'Amazon CloudWatch Logs':'AWS/Logs',            
             'AWS CodeBuild':'AWS/CodeBuild',
             'Amazon CodeGuru Profiler':'AWS/CodeGuruProfiler',
             'Amazon Cognito':'AWS/Cognito',
@@ -187,6 +190,8 @@ class Utility:
             'Amazon WorkMail':'AWS/WorkMail',
             'Amazon WorkSpaces':'AWS/WorkSpaces'
             }
+        if service in dict:
+            return dict[service]
+        return 'Other'
 
-        return dict[service]
 

@@ -5,11 +5,13 @@ import boto3
 from datetime import datetime, date
 from dateutil.relativedelta import *
 from decimal import Decimal
+from account import Account
+import traceback 
 
 
 subprocess.call('pip3 install pandas -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.call('pip3 install elasticsearch -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-subprocess.call('pip install python-dotenv -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+subprocess.call('pip3 install python-dotenv -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 sys.path.insert(1, '/tmp/')
@@ -77,23 +79,22 @@ def collect_ec2_utilization(ec2, metric_list, account_number, start_date, end_da
         #happens when aws returns empty values 
         pass   
     
-def collect_ec2_all(account_number, start_date, end_date):
-    try:
-
+def collect_ec2_all(account, start_date, end_date):
+    
         ec2_metric_list =  list(os.environ.get('EC2_PERFORMANCE_METRIC').split(","))      
         ec2_instances = []
         number_of_threads =  int(os.environ.get('EC2_NUMBER_OF_THREADS'))
         
         aws_service = AwsService()    
 
-        ec2_list = aws_service.get_aws_describe_instances()
+        ec2_list = aws_service.get_aws_describe_instances(account)
 
         threads = []
 
         for i in range(0,len(ec2_list), number_of_threads):
             chunk = ec2_list[i:i + number_of_threads]
             for ec2 in chunk:
-                x = threading.Thread(target=collect_ec2_utilization, args=(ec2, ec2_metric_list, account_number, start_date, end_date,))
+                x = threading.Thread(target=collect_ec2_utilization, args=(ec2, ec2_metric_list, account.account_number, start_date, end_date,))
                 threads.append(x)
                 x.start()
             for index, thread in enumerate(threads):                
@@ -104,9 +105,8 @@ def collect_ec2_all(account_number, start_date, end_date):
         for ec2 in ec2_list:
             print(f"instance_id: {ec2.instance_id} ,department = {ec2.department}, account_number: {ec2.account_number}, launch_time: {ec2.launch_time}")                
                 
-    except Exception as e:
-        print(e)
-
+    
+'''
 def add_forcase_to_account_datapoints(account_list):
 
     aws_service = AwsService() 
@@ -137,48 +137,44 @@ def add_forcase_to_account_datapoints(account_list):
             account.forecast_prediction_interval_upperbound = round(Decimal(response['ForecastResultsByTime'][0]['PredictionIntervalUpperBound']),2)
 
     return account_list
-
-def collect_account_services_cost(account_number, start_date, end_date):
+'''
+def collect_account_services_cost(start_date, end_date):
 
     aws_service = AwsService() 
     db_service = DbService()
 
-    # in ordder to manipulate dates (compare, add ...), we must convert to datetime
-    accounts_visibility_last_update_datetime = datetime.strptime(start_date, '%Y-%m-%d') 
-
-    granularity = 'DAILY'
-    metrics = 'AMORTIZED_COST'
-    groupby = 'SERVICE'
-
-    # get daily cost per service (EC2, RDS, ...) on the selected timeframe
-    response = aws_service.get_aws_cost_and_usage(account_number, start_date, end_date, granularity, metrics, groupby)
+    account = Account()
+   
+    account.get_cost_and_usage(start_date, end_date)
+    account.calc_services_forecast()
 
     #account_datapoint contains one value. like RDS servive in spesific time (day)
     #account_datapoints (list) contains all the datapoint between given start and end which are days in this case
-    account_datapoints = db_service.get_account_services_cost(account_number, response)
+    
+    #account_datapoints = db_service.get_account_services_cost(account_number, response)
 
-    account_datapoints_with_forecast = add_forcase_to_account_datapoints(account_datapoints)
+    #account_datapoints_with_forecast = add_forcase_to_account_datapoints(account_datapoints)
 
-    db_service.print_account_list(account_datapoints_with_forecast)
+    #db_service.print_account_list(account_datapoints_with_forecast)
 
     #insert accounts to elastic
-    db_service.account_bulk_insert_elastic(account_datapoints_with_forecast)    
+    db_service.account_bulk_insert_elastic(account)
+
+    return account
 
     
 def calc_billing_optimizations(event, context):
 
     try:    
-        client = boto3.client('sts')
-        response = client.get_caller_identity()
-        account_number = str(response['Account'])
+        
 
         start_date = os.environ.get('LAMBDA_LAST_UPDATE')
         end_date = date.today().strftime('%Y-%m-%d')
         
         if start_date < end_date:                
             print (f"Running lambda from start_date = {start_date} to {end_date}")
-            collect_account_services_cost(account_number, start_date, end_date)
-            collect_ec2_all(account_number, start_date, end_date)    
+            account = collect_account_services_cost(start_date, end_date)
+            collect_ec2_all(account, start_date, end_date)    
         else:
             print(f"start date {start_date} and end date {end_date} are equal. exit...")
 
@@ -201,6 +197,7 @@ def calc_billing_optimizations(event, context):
         return response
 
     except Exception as e:
+        traceback.print_exc()
         body = {'message':'Cost Optimization lambda exits with error! ' + str(e),  'input':event}
         response = {'statusCode':400, 'body':json.dumps(body)}
         return response
