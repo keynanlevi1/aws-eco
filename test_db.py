@@ -22,6 +22,9 @@ from utility import Utility
 import datetime 
 from datetime import date
 
+from datetime import datetime, date
+from dateutil.relativedelta import *
+
 FILES_LOCATION = 'metric_files/'
 
 
@@ -252,6 +255,41 @@ def using_boto3():
 
 
 def main():
+
+    cloudwatch = boto3.client('cloudwatch')
+    start_time = "2021-04-01"
+    end_time = "2021-04-05"
+    start_time = start_time + 'T00:00:00Z'
+    end_time = end_time + 'T00:00:00Z'
+
+    
+
+    start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ')
+    end_time = datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%SZ')        
+    
+    response = cloudwatch.get_metric_statistics(
+    Namespace='AWS/EC2',
+    
+    Dimensions=[
+        {
+            'Name': 'InstanceId',
+            'Value': ec2.instance_id
+        }
+    ],
+    
+    MetricName='CPUUtilization',
+    StartTime=start_time,
+    EndTime=end_time,
+    Period=3600,
+    Statistics=['Average']
+    )        
+
+    datapoints = response["Datapoints"]
+
+    print(datapoints)
+
+    return
+
 
     ec2_list = []
     session = boto3.Session()

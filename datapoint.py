@@ -1,7 +1,7 @@
 
 class Datapoint:
 
-    def __init__(self, department, account_number, keys, amount, start, end, metrics, account_name):
+    def __init__(self, amount, start, end, metrics):
         
         self.amount = amount      
         self.start = start

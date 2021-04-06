@@ -31,8 +31,8 @@ class Account:
 
         aws_service = AwsService()
 
+        #response holds the cost per service but needs to be parse
         response = aws_service.get_aws_cost_and_usage(self.account_number, start_date, end_date, granularity, metrics, groupby)
-        #response holds the cost and usage per service but needs to be parse
 
         self.services = self.set_account_services_cost(response)    
 
@@ -53,7 +53,7 @@ class Account:
                 metrics = key_list[0] #metrics = 'AmortizedCost'
                 
                 #A single datapoint holds one sample (event) like the cost of a servive in a spesific time (hour)
-                datapoint = Datapoint(department = self.department, account_name = self.account_name, account_number = self.account_number, keys = keys, amount = amount, start = start, end = end, metrics = metrics)
+                datapoint = Datapoint(amount = amount, start = start, end = end, metrics = metrics)
                 datapoints.append(datapoint)
 
             #Service holds a set of datapoints
