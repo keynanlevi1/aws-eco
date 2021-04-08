@@ -66,6 +66,7 @@ package:
     - datapoint.py
     - service.py
     - forecast.py
+    - metric.py
 #    - include-me-dir/**
 #  exclude:
 #    - exclude-me.py

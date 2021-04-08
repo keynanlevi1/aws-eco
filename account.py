@@ -4,7 +4,8 @@ from utility import Utility
 from aws_service import AwsService
 from decimal import Decimal
 from datapoint import Datapoint
-
+from metric import Metric
+from collections import defaultdict
 
 class Account:
 
@@ -23,7 +24,7 @@ class Account:
 
         return account_number
 
-    def get_cost_and_usage(self, start_date, end_date):
+    def get_cost_and_usage(self, start_date, end_date):        
 
         granularity = 'DAILY'
         metrics = 'AMORTIZED_COST'
@@ -34,34 +35,33 @@ class Account:
         #response holds the cost per service but needs to be parse
         response = aws_service.get_aws_cost_and_usage(self.account_number, start_date, end_date, granularity, metrics, groupby)
 
-        self.services = self.set_account_services_cost(response)    
+        self.services = self.set_account_services_cost(response)  
+       
 
 
     def set_account_services_cost(self, response):
 
         services = []
-        datapoints = []
+
+        services_list = defaultdict(list)
 
         for row in response['ResultsByTime']:
             start = row['TimePeriod']['Start']
             end = row['TimePeriod']['End']
             for group in row['Groups']:               
-                keys = group['Keys'][0]  #keys = service
-                service_name = keys
+                service_name = group['Keys'][0]  #keys = service                  
                 amount = round(Decimal(group['Metrics']['AmortizedCost']['Amount']),4)
                 key_list = list(group['Metrics'].keys())                
                 metrics = key_list[0] #metrics = 'AmortizedCost'
-                
+                            
                 #A single datapoint holds one sample (event) like the cost of a servive in a spesific time (hour)
                 datapoint = Datapoint(amount = amount, start = start, end = end, metrics = metrics)
-                datapoints.append(datapoint)
+                
+                services_list[service_name].append(datapoint)                
 
-            #Service holds a set of datapoints
-            service = Service(service_name, datapoints)
-            #Account holds a set of services
+        for name in services_list:
+            service = Service(name, services_list[name])
             services.append(service)
-
-            datapoints = []
 
         return services
 

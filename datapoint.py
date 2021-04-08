@@ -8,4 +8,3 @@ class Datapoint:
         self.end = end
         self.metrics = metrics
         
-

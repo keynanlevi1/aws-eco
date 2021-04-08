@@ -91,7 +91,7 @@ class Utility:
     @staticmethod
     def get_service_namespace(service):
         
-        dict = {
+        dict = {    
             'AmazonCloudWatch':'AWS/Logs',
             'Tax':'Tax',
             'Amazon API Gateway':'AWS/ApiGateway',

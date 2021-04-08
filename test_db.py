@@ -256,6 +256,23 @@ def using_boto3():
 
 def main():
 
+    # Create CloudWatch client
+    cloudwatch = boto3.client('cloudwatch')
+
+    # List metrics through the pagination interface
+    paginator = cloudwatch.get_paginator('list_metrics')
+    for response in paginator.paginate(#Dimensions=[{'Name': 'LogGroupName'}],
+                                    #MetricName='IncomingLogEvents',
+                                    Namespace='AWS/EC2'):
+        for row in response['Metrics']:
+            print (row['MetricName'])
+            for row2 in row['Dimensions']:
+                print (row2['Name'])
+                print (row2['Value'])
+          
+
+    return
+
     cloudwatch = boto3.client('cloudwatch')
     start_time = "2021-04-01"
     end_time = "2021-04-05"

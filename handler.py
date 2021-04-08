@@ -106,38 +106,7 @@ def collect_ec2_all(account, start_date, end_date):
             print(f"instance_id: {ec2.instance_id} ,department = {ec2.department}, account_number: {ec2.account_number}, launch_time: {ec2.launch_time}")                
                 
     
-'''
-def add_forcase_to_account_datapoints(account_list):
 
-    aws_service = AwsService() 
-
-    for account in account_list:
-
-        account_end = datetime.strptime(account.end, '%Y-%m-%d')
-        today_datetime = datetime.combine(date.today(), datetime.min.time())
-        
-        if account_end != today_datetime:
-            #Cannot calculate forecast on historic data
-            continue
-        
-        today = date.today()
-
-        start = today.strftime('%Y-%m-%d')
-
-        start_datetime = datetime.strptime(start, '%Y-%m-%d')
-        end_datetime = start_datetime.replace(day=1) + relativedelta(months=+1)
-        end = end_datetime.strftime('%Y-%m-%d')
-
-        response = aws_service.get_aws_cost_forecast(account.account_number,start, end, "MONTHLY", "AMORTIZED_COST", account.keys)
-
-        if response != "":
-
-            account.forecast_mean_value = round(Decimal(response['ForecastResultsByTime'][0]['MeanValue']),2)
-            account.forecast_prediction_interval_lowerbound = round(Decimal(response['ForecastResultsByTime'][0]['PredictionIntervalLowerBound']),2)
-            account.forecast_prediction_interval_upperbound = round(Decimal(response['ForecastResultsByTime'][0]['PredictionIntervalUpperBound']),2)
-
-    return account_list
-'''
 def collect_account_services_cost(start_date, end_date):
 
     aws_service = AwsService() 
@@ -147,22 +116,21 @@ def collect_account_services_cost(start_date, end_date):
    
     account.get_cost_and_usage(start_date, end_date)
     account.calc_services_forecast()
-
-    #account_datapoint contains one value. like RDS servive in spesific time (day)
-    #account_datapoints (list) contains all the datapoint between given start and end which are days in this case
     
-    #account_datapoints = db_service.get_account_services_cost(account_number, response)
-
-    #account_datapoints_with_forecast = add_forcase_to_account_datapoints(account_datapoints)
-
-    #db_service.print_account_list(account_datapoints_with_forecast)
-
     #insert accounts to elastic
     db_service.account_bulk_insert_elastic(account)
 
     return account
 
-    
+def collect_performance_metrics(acccount, start_date, end_date):
+    for service in acccount.services:
+        #print("service-name = " + service.name + ", service-namespace = " + service.namespace)
+        metrics = service.list_metrics(start_date, end_date)
+        
+        #for metric in metrics:
+        #    print(metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
+
+
 def calc_billing_optimizations(event, context):
 
     try:    
@@ -175,6 +143,7 @@ def calc_billing_optimizations(event, context):
             print (f"Running lambda from start_date = {start_date} to {end_date}")
             account = collect_account_services_cost(start_date, end_date)
             collect_ec2_all(account, start_date, end_date)    
+            collect_performance_metrics(account, start_date, end_date)    
         else:
             print(f"start date {start_date} and end date {end_date} are equal. exit...")
 
