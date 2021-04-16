@@ -116,8 +116,6 @@ def collect_account_services_cost(start_date, end_date):
    
     account.get_cost_and_usage(start_date, end_date)
 
-    print(account.services)
-
     account.calc_services_forecast()
     
     #insert accounts to elastic
@@ -127,11 +125,11 @@ def collect_account_services_cost(start_date, end_date):
 
 def collect_performance_metrics(acccount, start_date, end_date):
     for service in acccount.services:
-        #print("service-name = " + service.name + ", service-namespace = " + service.namespace)
+
         metrics = service.list_metrics(start_date, end_date)
         
-        #for metric in metrics:
-        #    print(metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
+        for metric in metrics:
+            print(metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
 
 
 def calc_billing_optimizations(event, context):
@@ -145,7 +143,7 @@ def calc_billing_optimizations(event, context):
         if start_date < end_date:                
             print (f"Running lambda from start_date = {start_date} to {end_date}")
             account = collect_account_services_cost(start_date, end_date)
-            collect_ec2_all(account, start_date, end_date)    
+            #collect_ec2_all(account, start_date, end_date)    
             collect_performance_metrics(account, start_date, end_date)    
         else:
             print(f"start date {start_date} and end date {end_date} are equal. exit...")

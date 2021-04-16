@@ -12,13 +12,13 @@ class Metric:
         self.start_date = start_date
         self.end_date = end_date
 
-    def __init__(self, name, dimension_name, dimension_value, start_date, end_date, statistics_type, period):
+    def __init__(self, name, namespace, dimension_name, dimension_value, start_date, end_date, statistics_type, period):
         
         self.name = name
          #metric_name like EBSReadBytes        
 
         #metric_namespace like AWS/EC2
-        self.namespace = ""
+        self.namespace = namespace
 
         #like InstanceId
         self.dimension_name = dimension_name 
