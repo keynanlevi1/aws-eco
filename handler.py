@@ -124,12 +124,31 @@ def collect_account_services_cost(start_date, end_date):
     return account
 
 def collect_performance_metrics(acccount, start_date, end_date):
+
+    aws_service = AwsService()
+
     for service in acccount.services:
 
         metrics = service.list_metrics(start_date, end_date)
         
         for metric in metrics:
-            print(metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
+            
+
+
+            statistics = 'Average'
+            namespace =  metric.namespace
+            instance_value = metric.dimension_value
+            instance_id = metric.dimension_name
+            period = 3600
+            start_time = start_date
+            end_time = end_date
+
+            print("instance_id = " + instance_id + ", instance_value = " + instance_value  + ", metric_name = " +metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
+                                                
+            df = aws_service.get_aws_metric_statistics(instance_id, instance_value, metric.name, period, start_time, end_time, namespace, statistics) 
+
+            if not df.empty:
+                print(df)
 
 
 def calc_billing_optimizations(event, context):

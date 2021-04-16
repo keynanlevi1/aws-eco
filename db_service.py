@@ -186,10 +186,7 @@ class DbService:
         #targetES.indices.put_alias(index=target_index_name, name='account-cost', ignore=[400, 404])
 
         df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
-
-        
-        print(account.services)
-
+      
         for service in account.services:
             for metric in service.metrics:
                 for datapoint in metric.datapoints:

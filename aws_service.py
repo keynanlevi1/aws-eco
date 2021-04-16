@@ -149,7 +149,7 @@ class AwsService:
 
         
 
-    def get_aws_metric_statistics(self, ec2, metric_name, period, start_time, end_time, namespace, statistics):
+    def get_aws_metric_statistics(self, instance_id, instance_value, metric_name, period, start_time, end_time, namespace, statistics):
         
         cloudwatch = boto3.client('cloudwatch')
 
@@ -163,8 +163,8 @@ class AwsService:
         Namespace=namespace,
         Dimensions=[
             {
-                'Name': 'InstanceId',
-                'Value': ec2.instance_id
+                'Name': instance_id,
+                'Value': instance_value
             }
         ],
         MetricName=metric_name,
