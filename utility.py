@@ -192,6 +192,6 @@ class Utility:
             }
         if service in dict:
             return dict[service]
-        return 'Other'
+        return 'service'
 
 

@@ -256,6 +256,20 @@ def using_boto3():
 
 def main():
 
+    group = {'Keys': ['AWS CloudTrail'], 'Metrics': {'AmortizedCost': {'Amount': '0.108152', 'Unit': 'USD'},'BlendedCost':{'Amount': '0.108152', 'Unit': 'USD'}}}
+
+    print (group['Metrics'])
+
+    for metric in group['Metrics']:
+        print( group['Metrics'][metric]['Amount'])
+    
+    return
+    
+   
+
+    return
+
+
     # Create CloudWatch client
     cloudwatch = boto3.client('cloudwatch')
 

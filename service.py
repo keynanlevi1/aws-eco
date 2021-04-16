@@ -6,13 +6,21 @@ from metric import Metric
 
 class Service:
 
+
     def __init__(self, name, datapoints):
 
         self.name = name
         self.namespace = Utility.get_service_namespace(name)
+        self.datapoints = datapoints  
+        self.metrics = []
+        self.name = ""
+        self.namespace = ""
+
+    def __init__(self, name):
         
-        #cost_datapoints
-        self.datapoints = datapoints        
+        self.name = name
+        self.metrics = []        
+        self.namespace = ""
 
     
     def calc_forecast(self):

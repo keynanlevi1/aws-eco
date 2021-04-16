@@ -1,28 +1,6 @@
 
 class Metric:
-    #metric_name like EBSReadBytes 
-    name = ""
-
-    #metric_namespace like AWS/EC2
-    namespace = ""
-
-    #like InstanceId
-    dimension_name = "" 
-
-    #like i-0c825168d7ad6093a 
-    dimension_value = ""
-
-    #sum/avg
-    statistics_type = "Average"
-
-    #3600(hour)
-    period = 3600
-
-    start_date = ""
     
-    end_date = ""
-
-
     def __init__(self, name, namespace, dimension_name, dimension_value, statistics_type, period, start_date, end_date):
         
         self.name = name
@@ -33,6 +11,33 @@ class Metric:
         self.period = period
         self.start_date = start_date
         self.end_date = end_date
+
+    def __init__(self, name):
+        
+        self.name = name
+         #metric_name like EBSReadBytes 
+        self.name = ""
+
+        #metric_namespace like AWS/EC2
+        self.namespace = ""
+
+        #like InstanceId
+        self.dimension_name = "" 
+
+        #like i-0c825168d7ad6093a 
+        self.dimension_value = ""
+
+        #sum/avg
+        self.statistics_type = "Average"
+
+        #3600(hour)
+        self.period = 3600
+
+        self.start_date = ""
+        
+        self.end_date = ""
+
+        self.datapoints = []
         
 
 

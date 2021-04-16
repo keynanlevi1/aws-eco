@@ -35,33 +35,122 @@ class Account:
         #response holds the cost per service but needs to be parse
         response = aws_service.get_aws_cost_and_usage(self.account_number, start_date, end_date, granularity, metrics, groupby)
 
-        self.services = self.set_account_services_cost(response)  
-       
-
+        self.services = self.set_account_services_cost(response)         
 
     def set_account_services_cost(self, response):
 
         services = []
 
-        services_list = defaultdict(list)
+        service_list = defaultdict(list)
+        metric_list = defaultdict(list)
+        
 
         for row in response['ResultsByTime']:
             start = row['TimePeriod']['Start']
             end = row['TimePeriod']['End']
-            for group in row['Groups']:               
-                service_name = group['Keys'][0]  #keys = service                  
-                amount = round(Decimal(group['Metrics']['AmortizedCost']['Amount']),4)
-                key_list = list(group['Metrics'].keys())                
-                metrics = key_list[0] #metrics = 'AmortizedCost'
-                            
-                #A single datapoint holds one sample (event) like the cost of a servive in a spesific time (hour)
-                datapoint = Datapoint(amount = amount, start = start, end = end, metrics = metrics)
-                
-                services_list[service_name].append(datapoint)                
+            for group in row['Groups']:     
+                service_name = group['Keys'][0]  #keys = service   
+                for metric in group['Metrics']:
+                    metric_name = metric
+                    amount = round(Decimal(group['Metrics'][metric]['Amount']),4)
+                    datapoint = Datapoint(amount = amount, start = start, end = end)
+                    metric_list[metric_name].append(datapoint)
 
-        for name in services_list:
-            service = Service(name, services_list[name])
-            services.append(service)
+                
+                service_list[service_name].append(dict(metric_list.copy()))
+
+                metric_list.clear()
+        
+      
+        
+        service_list = dict(service_list)
+        datapoints = []
+       
+        
+        services = defaultdict(list)
+        metrics = defaultdict(list)
+
+        for service_name in service_list:
+            #print(service_name)
+            if service_name not in services.keys():
+                service = Service(service_name)
+                services[service_name] = service
+            else:
+                service = services[service_name]
+
+            for row in service_list[service_name]:
+                                
+                for metric_name in row:
+                    #print(metric_name)
+                
+                    if metric_name not in metrics.keys():
+                        metric = Metric(metric_name)                        
+                        metrics[metric_name] = metric
+                        #print("once " + metric_name + " " + service_name)
+                    else:
+                        metric = metrics[metric_name]
+                        #print("many " + metric_name + " " + service_name)
+                        
+                    metric.datapoints.append(row[metric_name])
+
+            for key in metrics:  
+                #print(key + " " + service_name)
+                #print(service.name)
+                #print(metrics[key])
+                
+                service.metrics.append(metrics[key])
+                print(service.name)
+                print(service.metrics)
+            
+            metrics.clear()
+            
+        
+        
+        '''
+        for service in services:
+            print(service)
+            print(services[service].metrics)  
+        '''
+            #print(services[service].metrics)
+            #print("type:")
+            #print(type(services[service].metrics))
+        '''
+        for metric in services[service].metrics:
+            print(metric)     
+            print(type(metric))
+        '''
+                #for datapoint in 
+            
+                    #datapoints.append(metric[metric_name])
+                    
+
+        
+            #print(service_name)
+            #print(service_list[service_name])
+            #print("******************************")
+        
+       
+        
+        '''
+        for row in service_list:
+
+            print(row)
+            for metric in service_list[row]:
+                
+                for metric_name in metric:
+                    print(metric_name)
+                    print(metric[metric_name])
+                    
+        '''
+           
+            
+            
+           
+    
+                
+
+        #print(service_list)
+
 
         return services
 
