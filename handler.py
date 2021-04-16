@@ -112,9 +112,12 @@ def collect_account_services_cost(start_date, end_date):
     aws_service = AwsService() 
     db_service = DbService()
 
-    account = Account()
+    account = Account(start_date, end_date)
    
     account.get_cost_and_usage(start_date, end_date)
+
+    print(account.services)
+
     account.calc_services_forecast()
     
     #insert accounts to elastic

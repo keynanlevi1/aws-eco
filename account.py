@@ -9,12 +9,14 @@ from collections import defaultdict
 
 class Account:
 
-    def __init__(self):
+    def __init__(self, start_date, end_date):
         
         self.account_number = self.get_account_number()
         self.department = Utility.map_department_to_account(self.account_number)
         self.account_name = Utility.map_account_name_to_account_number(self.account_number)        
         self.services = []
+        self.start_date = start_date
+        self.end_date = end_date
     
     def get_account_number(self):
 
@@ -35,11 +37,10 @@ class Account:
         #response holds the cost per service but needs to be parse
         response = aws_service.get_aws_cost_and_usage(self.account_number, start_date, end_date, granularity, metrics, groupby)
 
-        self.services = self.set_account_services_cost(response)         
+        self.set_account_services_cost(response)         
 
     def set_account_services_cost(self, response):
 
-        services = []
 
         service_list = defaultdict(list)
         metric_list = defaultdict(list)
@@ -52,8 +53,8 @@ class Account:
                 service_name = group['Keys'][0]  #keys = service   
                 for metric in group['Metrics']:
                     metric_name = metric
-                    amount = round(Decimal(group['Metrics'][metric]['Amount']),4)
-                    datapoint = Datapoint(amount = amount, start = start, end = end)
+                    value = round(Decimal(group['Metrics'][metric]['Amount']),4)
+                    datapoint = Datapoint(value = value, start = start, end = end)
                     metric_list[metric_name].append(datapoint)
 
                 
@@ -84,14 +85,15 @@ class Account:
                     #print(metric_name)
                 
                     if metric_name not in metrics.keys():
-                        metric = Metric(metric_name)                        
+                        metric = Metric(name = metric_name, dimension_name = "Service", dimension_value = service.name, start_date = self.start_date, end_date = self.end_date,  statistics_type = "sum", period=1440)                        
                         metrics[metric_name] = metric
                         #print("once " + metric_name + " " + service_name)
                     else:
                         metric = metrics[metric_name]
                         #print("many " + metric_name + " " + service_name)
-                        
-                    metric.datapoints.append(row[metric_name])
+                    #print(type(row[metric_name]))
+                    #print(row[metric_name])
+                    metric.datapoints.append(row[metric_name][0])
 
             for key in metrics:  
                 #print(key + " " + service_name)
@@ -99,60 +101,29 @@ class Account:
                 #print(metrics[key])
                 
                 service.metrics.append(metrics[key])
-                print(service.name)
-                print(service.metrics)
+                #print(service.name)
+                #print(service.metrics)
             
             metrics.clear()
             
+        for service in services:
+            self.services.append(services[service])
         
+        print(self.services)
         
         '''
         for service in services:
-            print(service)
-            print(services[service].metrics)  
+            print(services[service].name)
+            #print(services[service].metrics)  
+            for metric in services[service].metrics:
+                print(metric.name)
+                for datapoint in metric.datapoints:
+                    #print(type(datapoint))
+                    print(datapoint.value)
+                    print(datapoint.start)
+                    print(datapoint.end)
         '''
-            #print(services[service].metrics)
-            #print("type:")
-            #print(type(services[service].metrics))
-        '''
-        for metric in services[service].metrics:
-            print(metric)     
-            print(type(metric))
-        '''
-                #for datapoint in 
-            
-                    #datapoints.append(metric[metric_name])
-                    
-
         
-            #print(service_name)
-            #print(service_list[service_name])
-            #print("******************************")
-        
-       
-        
-        '''
-        for row in service_list:
-
-            print(row)
-            for metric in service_list[row]:
-                
-                for metric_name in metric:
-                    print(metric_name)
-                    print(metric[metric_name])
-                    
-        '''
-           
-            
-            
-           
-    
-                
-
-        #print(service_list)
-
-
-        return services
 
     def calc_services_forecast(self):
 

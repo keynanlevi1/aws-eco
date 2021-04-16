@@ -148,7 +148,7 @@ class DbService:
             })
 
         now = datetime.datetime.now()
-        target_index_name = "aws-eco-account-cost-" + now.strftime("%m-%Y")
+        target_index_name = "aws-eco-account-cost-" + now.strftime("%m-%Y")        
         index_template_name = "aws-eco-account-cost-template"
 
         #targetES.indices.delete(index=target_index_name, ignore=[400, 404])
@@ -187,32 +187,36 @@ class DbService:
 
         df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
 
-        for service in account.services:
-            for datapoint in service.datapoints:
         
+        print(account.services)
 
-                new_row = {"_id": account.account_number + "-" + service.name + "-" + datetime.datetime.strptime(datapoint.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
+        for service in account.services:
+            for metric in service.metrics:
+                for datapoint in metric.datapoints:
+
+                    
+    
+                    new_row = {"_id": account.account_number + "-" + service.name + "-" + datetime.datetime.strptime(datapoint.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
                            "department": account.department, \
                            "account_name":account.account_name, \
                            "account_number":account.account_number,\
                            "keys":service.name,\
-                           "amount":datapoint.amount, \
+                           "amount":datapoint.value, \
                            "start_time":datapoint.start, \
                            "end_time":datapoint.end,\
-                           "metrics":datapoint.metrics, \
+                           "metrics":metric.name, \
                            "forecast_mean_value": service.forecast.forecast_mean_value, \
                            "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
                            "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
-                
-                df = df.append(new_row, ignore_index=True)
+
+                    print(new_row)
+
+                    df = df.append(new_row, ignore_index=True)
         
         documents = df.to_dict(orient='records')
-
-        try:
-            helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
-        except Exception as e:
-            print(e)
-            raise
+        
+        helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
+       
 
     def print_account_list(self, account_list):
 

@@ -20,7 +20,9 @@ class Service:
         
         self.name = name
         self.metrics = []        
-        self.namespace = ""
+        self.namespace = Utility.get_service_namespace(name)
+        
+        
 
     
     def calc_forecast(self):
@@ -47,7 +49,7 @@ class Service:
                     dimension_name = row2['Name']
                     dimension_value = row2['Value']
 
-                    metric = Metric(metric_name, self.namespace, dimension_name, dimension_value, statistics_type, period, start_date, end_date)
+                    metric = Metric(metric_name,  dimension_name, dimension_value, statistics_type, period, start_date, end_date)
                     metrics.append(metric)
 
         return metrics

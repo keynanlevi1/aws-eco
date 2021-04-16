@@ -1,9 +1,9 @@
 
 class Datapoint:
 
-    def __init__(self, amount, start, end):
+    def __init__(self, value, start, end):
         
-        self.amount = amount      
+        self.value = value      
         self.start = start
         self.end = end
      
