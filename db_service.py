@@ -209,7 +209,6 @@ class DbService:
                            "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
                            "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
 
-
                     df = df.append(new_row, ignore_index=True)
         
         documents = df.to_dict(orient='records')
