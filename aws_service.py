@@ -6,7 +6,7 @@ import pandas
 import numpy as np
 from datapoint import Datapoint
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 from utility import Utility
 
 class AwsService: 
@@ -174,13 +174,25 @@ class AwsService:
         Statistics=[statistics]
         )        
 
-        datapoints = response["Datapoints"]
+        results = response["Datapoints"]
 
-        df = pandas.DataFrame(columns=[metric_name, "start_time"])
+        datapoints = []
+
+        #df = pandas.DataFrame(columns=[metric_name, "start_time"])
         
-        for datapoint in datapoints:
-            start_time = datapoint["Timestamp"].strftime("%Y-%m-%d %H:%M:%S")
-            start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        for row in results:
+            start_time = row["Timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+            start = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+            end = start + timedelta(seconds=period)
+            end = end.strftime("%Y-%m-%d %H:%M:%S")
+            value = row["Average"]
+            
+            datapoint = Datapoint(value, start_time, end)
+            datapoints.append(datapoint)
+
+        return datapoints
+
+        '''    
             new_row = {metric_name :datapoint["Average"], "start_time": start_time}
             df = df.append(new_row, ignore_index=True)           
 
@@ -204,4 +216,4 @@ class AwsService:
             df['is_disk_read_bytes_idle'] = np.where(df[metric_name] < Thresholds.disk_read_bytes_threshold, 1, 0)
         
         return df    
-       
+       '''

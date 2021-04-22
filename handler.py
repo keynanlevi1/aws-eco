@@ -116,25 +116,26 @@ def collect_account_services_cost(start_date, end_date):
    
     account.get_cost_and_usage(start_date, end_date)
 
-    account.calc_services_forecast()
-    
-    #insert accounts to elastic
+    account.calc_services_forecast()       
+
     db_service.account_bulk_insert_elastic(account)
 
     return account
 
-def collect_performance_metrics(acccount, start_date, end_date):
+def collect_performance_metrics(account, start_date, end_date):
 
     aws_service = AwsService()
+    db_service = DbService()
 
-    for service in acccount.services:
+    for service in account.services:        
 
+        #if service.name == "Amazon Elastic Compute Cloud - Compute":  
+        print(service.name)          
+            
         metrics = service.list_metrics(start_date, end_date)
         
         for metric in metrics:
             
-
-
             statistics = 'Average'
             namespace =  metric.namespace
             instance_value = metric.dimension_value
@@ -143,13 +144,27 @@ def collect_performance_metrics(acccount, start_date, end_date):
             start_time = start_date
             end_time = end_date
 
-            print("instance_id = " + instance_id + ", instance_value = " + instance_value  + ", metric_name = " +metric.name + "," + metric.namespace + "," + metric.dimension_name + "," + metric.dimension_value)
-                                                
-            df = aws_service.get_aws_metric_statistics(instance_id, instance_value, metric.name, period, start_time, end_time, namespace, statistics) 
+            #if instance_value == "i-02117d25eecd0c8d9":
 
-            if not df.empty:
-                print(df)
+            datapoints = aws_service.get_aws_metric_statistics(instance_id, instance_value, metric.name, period, start_time, end_time, namespace, statistics) 
 
+            if datapoints != []:
+
+                #print(service.name + "," + metric.name + ", " + metric.dimension_name + ", " + metric.dimension_value)
+                metric.datapoints = datapoints
+                service.metrics.append(metric)
+            
+        db_service.account_bulk_insert_elastic(account)
+                
+
+    #return acccount
+
+
+def save_records_in_elasticsearch(account):
+
+    db_service = DbService()
+    #insert accounts to elastic
+    db_service.account_bulk_insert_elastic(account)
 
 def calc_billing_optimizations(event, context):
 
@@ -164,6 +179,9 @@ def calc_billing_optimizations(event, context):
             account = collect_account_services_cost(start_date, end_date)
             #collect_ec2_all(account, start_date, end_date)    
             collect_performance_metrics(account, start_date, end_date)    
+
+            #save_records_in_elasticsearch(account)
+
         else:
             print(f"start date {start_date} and end date {end_date} are equal. exit...")
 

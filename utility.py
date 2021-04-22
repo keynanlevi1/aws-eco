@@ -94,6 +94,7 @@ class Utility:
         dict = {    
             'AmazonCloudWatch':'AWS/Logs',
             'Tax':'Tax',
+            'Amazon Elastic Compute Cloud - Compute': 'AWS/EC2',
             'Amazon API Gateway':'AWS/ApiGateway',
             'AppStream 2.0':'AWS/AppStream',
             'AWS AppSync':'AWS/AppSync',

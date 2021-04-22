@@ -28,7 +28,7 @@ class Account:
 
     def get_cost_and_usage(self, start_date, end_date):        
 
-        granularity = 'DAILY'
+        granularity = 'HOURLY'
         metrics = 'AMORTIZED_COST'
         groupby = 'SERVICE' # like EC2, RDS, ...
 
@@ -47,8 +47,9 @@ class Account:
         
 
         for row in response['ResultsByTime']:
-            start = row['TimePeriod']['Start']
-            end = row['TimePeriod']['End']
+            start = row['TimePeriod']['Start'] + " 00:00:00"
+            end = row['TimePeriod']['End']+ " 00:00:00"
+            
             for group in row['Groups']:     
                 service_name = group['Keys'][0]  #keys = service   
                 for metric in group['Metrics']:
@@ -56,18 +57,14 @@ class Account:
                     value = round(Decimal(group['Metrics'][metric]['Amount']),4)
                     datapoint = Datapoint(value = value, start = start, end = end)
                     metric_list[metric_name].append(datapoint)
-
                 
                 service_list[service_name].append(dict(metric_list.copy()))
 
-                metric_list.clear()
-        
-      
+                metric_list.clear()      
         
         service_list = dict(service_list)
         datapoints = []
-       
-        
+               
         services = defaultdict(list)
         metrics = defaultdict(list)
 

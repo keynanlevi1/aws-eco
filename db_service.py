@@ -6,7 +6,7 @@ from datapoint import Datapoint
 import numpy as np
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers as helpers
-import datetime 
+from datetime import datetime
 import os
 from decimal import Decimal
 from elasticsearch.client.ingest import IngestClient
@@ -41,7 +41,7 @@ class DbService:
                 ]
             })
 
-        now = datetime.datetime.now()
+        now = datetime.now()
         target_index_name = "ec2-cost-" + now.strftime("%m-%Y")
         index_template_name = "ec2-cost-template"
 
@@ -119,6 +119,7 @@ class DbService:
             print(e)
             print(documents)
             raise
+        
 
     def account_bulk_insert_elastic(self, account):
 
@@ -147,7 +148,7 @@ class DbService:
                 ]
             })
 
-        now = datetime.datetime.now()
+        now = datetime.now()
         target_index_name = "aws-eco-account-cost-" + now.strftime("%m-%Y")        
         index_template_name = "aws-eco-account-cost-template"
 
@@ -167,7 +168,9 @@ class DbService:
                 'account_name': {'type': 'keyword'},          
                 'account_number': {'type': 'keyword'},
                 'keys': {'type': 'keyword'},
-                'amount': {'type': 'float'},
+                'value': {'type': 'float'},
+                'dimension_name': {'type': 'keyword'},
+                'dimension_value': {'type': 'keyword'},
                 'start_time': {'format': 'dateOptionalTime', 'type': 'date'},
                 'end_time': {'format': 'dateOptionalTime', 'type': 'date'},                        
                 'metrics': {'type': 'keyword'},
@@ -185,39 +188,43 @@ class DbService:
         #alias is needed for data retention policy
         #targetES.indices.put_alias(index=target_index_name, name='account-cost', ignore=[400, 404])
 
-        df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","amount","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
+        df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","value","dimension_name","dimension_value","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
       
         for service in account.services:
             for metric in service.metrics:
                 for datapoint in metric.datapoints:
-
                     
+                    if datapoint != []:                       
     
-                    new_row = {"_id": account.account_number + "-" + service.name + "-" + datetime.datetime.strptime(datapoint.start, '%Y-%m-%d').strftime("%Y%m%d%H%M%S"), \
-                           "department": account.department, \
-                           "account_name":account.account_name, \
-                           "account_number":account.account_number,\
-                           "keys":service.name,\
-                           "amount":datapoint.value, \
-                           "start_time":datapoint.start, \
-                           "end_time":datapoint.end,\
-                           "metrics":metric.name, \
-                           "forecast_mean_value": service.forecast.forecast_mean_value, \
-                           "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
-                           "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
+                        new_row = {"_id": (account.account_number + "-" + metric.dimension_name + "-"+metric.dimension_value + "-" + datetime.strptime(datapoint.start, "%Y-%m-%d %H:%M:%S").strftime("%Y%m%d%H%M%S")).replace(" ", ""), \
+                            "department": account.department, \
+                            "account_name":account.account_name, \
+                            "account_number":account.account_number,\
+                            "keys":service.name,\
+                            "value":datapoint.value, \
+                            "dimension_name":metric.dimension_name, \
+                            "dimension_value":metric.dimension_value, \
+                            "start_time": datetime.strptime(datapoint.start, "%Y-%m-%d %H:%M:%S"), \
+                            "end_time": datetime.strptime(datapoint.end, "%Y-%m-%d %H:%M:%S"),\
+                            "metrics": metric.name, \
+                            "forecast_mean_value": service.forecast.forecast_mean_value, \
+                            "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
+                            "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
 
-                    df = df.append(new_row, ignore_index=True)
+                        df = df.append(new_row, ignore_index=True)
         
-        documents = df.to_dict(orient='records')
-        
-        helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
+        if not df.empty:
+
+            documents = df.to_dict(orient='records')
+            
+            helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
        
-
+    '''
     def print_account_list(self, account_list):
 
         for account in account_list:
             print(f"department = {account.department}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")    
-           
+     '''      
 
     def create_performance_counters_list(self, df_merged, metric_list):
 
