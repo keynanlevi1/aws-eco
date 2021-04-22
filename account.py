@@ -28,7 +28,7 @@ class Account:
 
     def get_cost_and_usage(self, start_date, end_date):        
 
-        granularity = 'HOURLY'
+        granularity = 'DAILY'
         metrics = 'AMORTIZED_COST'
         groupby = 'SERVICE' # like EC2, RDS, ...
 
