@@ -1,9 +1,7 @@
-import pandas
 import traceback 
 from performance_counters import PerformanceCounters
 from thresholds import Thresholds
 from datapoint import Datapoint
-import numpy as np
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers as helpers
 from datetime import datetime
@@ -12,115 +10,8 @@ from decimal import Decimal
 from elasticsearch.client.ingest import IngestClient
 from utility import Utility
 
-
-
-pandas.set_option('display.max_rows', 10000)
-pandas.set_option('display.max_columns', 10000)
-pandas.set_option('display.width', 10000)
-
-
 class DbService:
-      
-    def ec2_bulk_insert_elastic(self, ec2):
-
-        ElasticConnectionString = os.getenv("ELASTIC_CONNECTIONSTRING")        
-        targetES = Elasticsearch(ElasticConnectionString)
-
-        p = IngestClient(targetES)
-
-        if not p.get_pipeline(id = "ec2-cost-idle-cpu"): 
-            p.put_pipeline(id='ec2-cost-idle-cpu', body={
-                'description': "add idle_text, cpu_percent fields",
-                'processors': [
-                {
-                    "script": {
-                    "lang": "painless",
-                    "source": "\r\n          if (ctx.containsKey(\"is_idle\")) { \r\n            String text;\r\n            int idle;\r\n            if (ctx.is_idle instanceof byte ||\r\n                ctx.is_idle instanceof short ||\r\n                ctx.is_idle instanceof int ||\r\n                ctx.is_idle instanceof long ||\r\n                ctx.is_idle instanceof float ||\r\n                ctx.is_idle instanceof double)\r\n            {\r\n                idle = (int)ctx.is_idle;\r\n            } else {  \r\n                idle = Integer.parseInt(ctx['is_idle']);\r\n            }\r\n            if (idle == 0) { \r\n              text = \"In Use\";\r\n            } else if (idle == 1) {\r\n              text = \"Potential Waste\";\r\n            } else {\r\n              text = \"\";\r\n            }\r\n            ctx['idle_text'] = text;\r\n          }\r\n          float cpu;\r\n          if (ctx.containsKey(\"cpu_utilization\")) {\r\n            if (ctx.cpu_utilization instanceof byte ||\r\n                ctx.cpu_utilization instanceof short ||\r\n                ctx.cpu_utilization instanceof int ||\r\n                ctx.cpu_utilization instanceof long ||\r\n                ctx.cpu_utilization instanceof float ||\r\n                ctx.cpu_utilization instanceof double)\r\n            {\r\n                cpu = (float)ctx.cpu_utilization/100;\r\n            } else {   \r\n              cpu = Float.parseFloat(ctx['cpu_utilization'])/100;\r\n            }\r\n            ctx['cpu_percent'] = cpu;\r\n          }\r\n        "
-                    }
-                }
-                ]
-            })
-
-        now = datetime.now()
-        target_index_name = "ec2-cost-" + now.strftime("%m-%Y")
-        index_template_name = "ec2-cost-template"
-
-
-        request_body = {
-        "index_patterns": ["ec2-cost-*"],
-        "settings" : {
-            "number_of_shards": 1,
-            "number_of_replicas": 1,
-            "index": {"codec": "best_compression"},
-            "default_pipeline": "ec2-cost-idle-cpu"
-
-        },
-        'mappings': {            
-            'properties': {                
-                'start_time': {'format': 'dateOptionalTime', 'type': 'date'},
-                'cpu_utilization': {'type': 'float'},
-                'network_in': {'type': 'float'},
-                'network_out': {'type': 'float'},                
-                'disk_write_ops': {'type': 'float'},
-                'disk_read_ops': {'type': 'float'},
-                'disk_write_bytes': {'type': 'float'},
-                'disk_read_bytes': {'type': 'float'},
-                'ebs_write_bytes': {'type': 'float'},
-                'ebs_read_bytes': {'type': 'float'},
-                'is_idle': {'type': 'short'},
-                'availability_zone': {'type': 'keyword'},
-                'instance_id': {'type': 'keyword'},
-                'instance_type': {'type': 'keyword'},                
-                'launch_time': {'format': 'dateOptionalTime', 'type': 'date'},                        
-                'state': {'type': 'keyword'},
-                'ebs_optimized': {'type': 'keyword'},
-                'account_number': {'type': 'keyword'},  
-                'department': {'type': 'keyword'}, 
-                'account_name': {'type': 'keyword'},   
-                'cost': {'type': 'float'},            
-            }}
-        }                        
-
-
-        if not targetES.indices.exists_template(index_template_name):
-            targetES.indices.put_template(index_template_name, request_body, create=True)
-
-        #targetES.indices.delete(index=target_index_name, ignore=[400, 404])
-        #targetES.indices.create(index = target_index_name, body = request_body, ignore=[400, 404])
-
-        #alias is needed for data retention policy
-        #targetES.indices.put_alias(index=target_index_name, name='ec2-cost', ignore=[400, 404])
-
-
-        df = pandas.DataFrame(columns=["_id","start_time","cpu_utilization","network_in","network_out", "ebs_write_bytes", "ebs_read_bytes", \
-                "disk_write_ops","disk_read_ops","disk_write_bytes","disk_read_bytes", "is_idle","availability_zone","instance_id","instance_type", \
-                     "launch_time", "state", "ebs_optimized", "account_number", "department", "account_name", "cost"])      
-
-        for performance_counters in ec2.performance_counters_list:
-                       
-            new_row = {"_id": ec2.instance_id + "-" + performance_counters.start_time.strftime("%Y%m%d%H%M%S") ,"start_time": performance_counters.start_time, "cpu_utilization":performance_counters.cpu_utilization, \
-                "network_in":performance_counters.network_in, \
-                "network_out": performance_counters.network_out, "ebs_write_bytes":performance_counters.ebs_write_bytes, \
-                "ebs_read_bytes":performance_counters.ebs_read_bytes, "disk_write_ops": performance_counters.disk_write_ops, \
-                    "disk_read_ops": performance_counters.disk_read_ops, "disk_write_bytes":performance_counters.disk_write_bytes, \
-                         "disk_read_bytes":performance_counters.disk_read_bytes, \
-                           "is_idle": performance_counters.is_idle, "availability_zone": ec2.availability_zone, "instance_id":ec2.instance_id, \
-                               "instance_type":ec2.instance_type, "launch_time":ec2.launch_time, \
-                                   "state": ec2.state, "ebs_optimized":ec2.ebs_optimized,  "account_number": ec2.account_number, "department": ec2.department, \
-                                        "account_name": ec2.account_name, "cost": performance_counters.cost}
-            
-            df = df.append(new_row, ignore_index=True)
-           
-        documents = df.to_dict(orient='records')
-
-        try:
-            helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
-        except Exception as e:
-            print(e)
-            print(documents)
-            raise
-        
-
+    
     def account_bulk_insert_elastic(self, account):
 
         ElasticConnectionString = os.getenv("ELASTIC_CONNECTIONSTRING")
@@ -182,13 +73,8 @@ class DbService:
 
         if not targetES.indices.exists_template(index_template_name):
             targetES.indices.put_template(index_template_name, request_body, create=True)
-        
-        #targetES.indices.create(index = target_index_name, body = request_body, ignore=[400, 404])
-
-        #alias is needed for data retention policy
-        #targetES.indices.put_alias(index=target_index_name, name='account-cost', ignore=[400, 404])
-
-        df = pandas.DataFrame(columns=["_id","department", "account_name", "account_number","keys","value","dimension_name","dimension_value","start_time","end_time","metrics","forecast_mean_value","forecast_prediction_interval_lowerbound","forecast_prediction_interval_upperbound"])
+               
+        documents =[]
       
         for service in account.services:
             for metric in service.metrics:
@@ -211,20 +97,11 @@ class DbService:
                             "forecast_prediction_interval_lowerbound": service.forecast.forecast_prediction_interval_lowerbound, \
                             "forecast_prediction_interval_upperbound": service.forecast.forecast_prediction_interval_upperbound  }
 
-                        df = df.append(new_row, ignore_index=True)
+                        documents.append(new_row)
         
-        if not df.empty:
-
-            documents = df.to_dict(orient='records')
+        if documents != []:
             
-            helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)
-       
-    '''
-    def print_account_list(self, account_list):
-
-        for account in account_list:
-            print(f"department = {account.department}, account_name = {account.account_name}, account_number = {account.account_number}, start = {account.start}, end = {account.end}, metrics = {account.metrics}, keys = {account.keys}, amount = {account.amount}, forecast = {account.forecast_mean_value}, interval_lowerbound = {account.forecast_prediction_interval_lowerbound}, interval_upperbound = {account.forecast_prediction_interval_upperbound}")    
-     '''      
+            helpers.bulk(targetES, documents, index=target_index_name,doc_type='_doc', raise_on_error=True)     
 
     def create_performance_counters_list(self, df_merged, metric_list):
 

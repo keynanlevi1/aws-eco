@@ -256,6 +256,41 @@ def using_boto3():
 
 def main():
 
+    #df = pandas.DataFrame(columns=["_id","department", "account_name"])
+
+    documents = []
+
+    new_row = {"_id": "1" , \
+                            "department": "account.department", \
+                            "account_name":"account.account_name"
+                             }
+
+    #df = df.append(new_row, ignore_index=True)
+
+    documents.append(new_row)
+
+    new_row = {"_id": "2" , \
+                            "department": "account.department", \
+                            "account_name":"account.account_name"
+                             }
+    
+    documents.append(new_row)
+    #df = df.append(new_row, ignore_index=True)
+
+    #print(df)
+
+    print("***************************************************************")
+
+    #documents = df.to_dict(orient='records')
+
+    print(documents)
+    print(type(documents))
+
+    return
+
+
+
+
     group = {'Keys': ['AWS CloudTrail'], 'Metrics': {'AmortizedCost': {'Amount': '0.108152', 'Unit': 'USD'},'BlendedCost':{'Amount': '0.108152', 'Unit': 'USD'}}}
 
     print (group['Metrics'])
