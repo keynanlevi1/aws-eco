@@ -2,7 +2,7 @@ pipeline {
    agent any
    
    environment {
-       DEMO='1.5'
+       DEMO='1.6'
    }
 
    stages {
